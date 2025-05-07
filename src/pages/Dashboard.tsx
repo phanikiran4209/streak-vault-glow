@@ -12,7 +12,7 @@ import HabitForm from "@/components/HabitForm";
 import HabitHeatmap from "@/components/HabitHeatmap";
 import Layout from "@/components/Layout";
 import { StatsCard } from "@/components/StatsCard";
-import AnalyticsCharts from "@/components/AnalyticsCharts";
+import { AnalyticsCharts } from "@/components/AnalyticsCharts";
 import { 
   BarChart3, 
   Calendar, 

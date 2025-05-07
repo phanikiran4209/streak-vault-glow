@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Bell } from "lucide-react";
 
 const Login = () => {
@@ -28,7 +28,7 @@ const Login = () => {
         await login(email, password);
         toast({
           title: "Welcome back!",
-          description: "You've successfully logged in.",
+          description: "You've successfully logged in."
         });
         navigate("/");
       } else {
@@ -37,8 +37,7 @@ const Login = () => {
         toast({
           title: "Account created!",
           description: "Your account has been created. Please log in.",
-          variant: "default",
-          icon: <Bell className="h-4 w-4" />,
+          variant: "default"
         });
         // Switch to login mode after successful registration
         setIsLogin(true);
@@ -49,7 +48,7 @@ const Login = () => {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
