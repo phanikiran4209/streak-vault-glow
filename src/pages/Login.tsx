@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { Bell } from "lucide-react";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -24,20 +24,27 @@ const Login = () => {
     
     try {
       if (isLogin) {
+        // Handle login
         await login(email, password);
         toast({
           title: "Welcome back!",
           description: "You've successfully logged in.",
         });
+        navigate("/");
       } else {
+        // Handle registration
         await register(email, password, name);
         toast({
           title: "Account created!",
-          description: "Your account has been created successfully.",
+          description: "Your account has been created. Please log in.",
+          variant: "default",
+          icon: <Bell className="h-4 w-4" />,
         });
+        // Switch to login mode after successful registration
+        setIsLogin(true);
+        // Keep the email but clear password for security
+        setPassword("");
       }
-      
-      navigate("/");
     } catch (error) {
       toast({
         title: "Error",

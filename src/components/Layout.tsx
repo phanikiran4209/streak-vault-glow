@@ -22,7 +22,7 @@ const Layout = ({ children }: LayoutProps) => {
       <header className="bg-white/80 dark:bg-gray-900/90 backdrop-blur-lg py-4 px-6 border-b border-border sticky top-0 z-10">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center glow-effect">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
               <span className="text-white font-bold text-lg">HV</span>
             </div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-500 to-primary-300 bg-clip-text text-transparent">

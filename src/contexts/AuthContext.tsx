@@ -13,24 +13,23 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users data
-const USERS_STORAGE_KEY = "habitvault_users";
-const CURRENT_USER_KEY = "habitvault_current_user";
+// Storage keys
+const TOKEN_STORAGE_KEY = "habitvault_token";
+const USER_STORAGE_KEY = "habitvault_user";
+
+// API URLs
+const API_BASE_URL = "http://localhost:5000/api/auth";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize users if not exists
-    const existingUsers = getLocalStorage<User[]>(USERS_STORAGE_KEY, []);
-    if (existingUsers.length === 0) {
-      setLocalStorage(USERS_STORAGE_KEY, []);
-    }
-    
     // Check if user is already logged in
-    const savedUser = getLocalStorage<User | null>(CURRENT_USER_KEY, null);
-    if (savedUser) {
+    const savedToken = getLocalStorage<string | null>(TOKEN_STORAGE_KEY, null);
+    const savedUser = getLocalStorage<User | null>(USER_STORAGE_KEY, null);
+    
+    if (savedToken && savedUser) {
       setUser(savedUser);
     }
     
@@ -40,54 +39,71 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const users = getLocalStorage<Array<{ id: string; email: string; password: string; name?: string }>>(USERS_STORAGE_KEY, []);
-    const foundUser = users.find(u => u.email === email && u.password === password);
-    
-    if (!foundUser) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Login failed: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Save token to local storage
+      setLocalStorage(TOKEN_STORAGE_KEY, data.token);
+      
+      // Create user object from login response
+      const userInfo: User = {
+        id: data.id || crypto.randomUUID(), // Use ID from response or generate one
+        email,
+        name: data.name || email.split('@')[0], // Use name from response or generate one from email
+      };
+      
+      setLocalStorage(USER_STORAGE_KEY, userInfo);
+      setUser(userInfo);
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    } finally {
       setIsLoading(false);
-      throw new Error("Invalid email or password");
     }
-    
-    const { password: _, ...userWithoutPassword } = foundUser;
-    setUser(userWithoutPassword);
-    setLocalStorage(CURRENT_USER_KEY, userWithoutPassword);
-    setIsLoading(false);
   };
 
   const register = async (email: string, password: string, name?: string) => {
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const users = getLocalStorage<Array<{ id: string; email: string; password: string; name?: string }>>(USERS_STORAGE_KEY, []);
-    
-    if (users.some(u => u.email === email)) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, name }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Registration failed: ${response.statusText}`);
+      }
+      
+      // Registration successful, but we don't automatically log in
+      // The user will be redirected to the login page
+    } catch (error) {
+      console.error("Registration error:", error);
+      throw error;
+    } finally {
       setIsLoading(false);
-      throw new Error("Email already in use");
     }
-    
-    const newUser = {
-      id: crypto.randomUUID(),
-      email,
-      password,
-      name
-    };
-    
-    setLocalStorage(USERS_STORAGE_KEY, [...users, newUser]);
-    
-    const { password: _, ...userWithoutPassword } = newUser;
-    setUser(userWithoutPassword);
-    setLocalStorage(CURRENT_USER_KEY, userWithoutPassword);
-    setIsLoading(false);
   };
 
   const logout = () => {
     setUser(null);
-    setLocalStorage(CURRENT_USER_KEY, null);
+    setLocalStorage(TOKEN_STORAGE_KEY, null);
+    setLocalStorage(USER_STORAGE_KEY, null);
   };
 
   return (

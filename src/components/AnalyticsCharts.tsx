@@ -1,155 +1,177 @@
 
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
   ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
   Tooltip,
-  Legend
+  CartesianGrid,
+  LineChart,
+  Line,
+  Legend,
 } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HabitWithLogs } from "@/types";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent
-} from "@/components/ui/chart";
 
 interface AnalyticsChartsProps {
   habits: HabitWithLogs[];
 }
 
-export const AnalyticsCharts = ({ habits }: AnalyticsChartsProps) => {
-  // Prepare data for completion rate pie chart
-  const completionRateData = [
-    {
-      name: "Completed",
-      value: habits.reduce((sum, habit) => sum + habit.completionRate, 0) / (habits.length || 1),
-    },
-    {
-      name: "Missed",
-      value: 100 - habits.reduce((sum, habit) => sum + habit.completionRate, 0) / (habits.length || 1),
-    },
-  ];
+const COLORS = ['#9b87f5', '#65c9ff', '#ff7eb6', '#7affa7', '#ffd166'];
 
-  // Prepare data for habits distribution by streak
-  const streaksData = habits.map(habit => ({
+export function AnalyticsCharts({ habits }: AnalyticsChartsProps) {
+  const [activeTab, setActiveTab] = useState("completion");
+
+  // Calculate completion rates
+  const completionData = habits.map((habit) => ({
     name: habit.name,
-    currentStreak: habit.currentStreak,
-    longestStreak: habit.longestStreak,
+    value: habit.completionRate,
+    color: COLORS[Math.floor(Math.random() * COLORS.length)],
   }));
 
-  // Colors for charts
-  const COLORS = ["#9b87f5", "#f87171", "#4ade80", "#facc15", "#38bdf8"];
+  // Calculate streaks
+  const streakData = habits.map((habit) => ({
+    name: habit.name,
+    current: habit.currentStreak,
+    longest: habit.longestStreak,
+  }));
+
+  // Simple weekly trend data (mock data - in a real app, you would calculate this from actual logs)
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const trendData = days.map((day, i) => {
+    const completedCount = habits.reduce((acc, habit) => {
+      // This is simplified; in reality you'd check for the actual day's logs
+      const randomCompleted = Math.random() > 0.3; 
+      return randomCompleted ? acc + 1 : acc;
+    }, 0);
+    
+    return {
+      day,
+      completed: completedCount,
+      total: habits.length,
+      rate: habits.length > 0 ? Math.round((completedCount / habits.length) * 100) : 0,
+    };
+  });
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const value = payload[0].value;
+      const stringValue = typeof value === 'number' ? value.toString() : value;
+      const formattedValue = typeof value === 'number' ? `${value}%` : value;
+      
+      return (
+        <div className="bg-background p-2 rounded border border-border shadow-sm">
+          <p>{payload[0].name}: {formattedValue}</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
-      {/* Completion Rate Pie Chart */}
-      <Card className="overflow-hidden">
-        <CardHeader>
-          <CardTitle className="text-lg">Overall Completion Rate</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px] w-full">
-            <ChartContainer
-              config={{
-                completed: { color: "#9b87f5", label: "Completed" },
-                missed: { color: "#f87171", label: "Missed" }
-              }}
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={completionRateData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={5}
-                    dataKey="value"
-                    startAngle={90}
-                    endAngle={-270}
-                    animationDuration={1000}
+    <Card className="col-span-full animate-fade-in">
+      <CardHeader>
+        <CardTitle className="text-lg font-medium">Analytics</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="w-full">
+            <TabsTrigger value="completion" className="flex-1">Completion Rate</TabsTrigger>
+            <TabsTrigger value="streaks" className="flex-1">Streaks</TabsTrigger>
+            <TabsTrigger value="trend" className="flex-1">Weekly Trend</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="completion" className="mt-4">
+            {habits.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No habits to analyze yet</p>
+            ) : (
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={completionData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }) => `${name}: ${value}%`}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                      animationDuration={800}
+                    >
+                      {completionData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend formatter={(value, entry, index) => value} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="streaks" className="mt-4">
+            {habits.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No habits to analyze yet</p>
+            ) : (
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={streakData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
                   >
-                    {completionRateData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={index === 0 ? "#9b87f5" : "#f87171"} 
-                        className="hover:opacity-90 transition-opacity"
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="bg-white dark:bg-gray-800 p-3 border border-border rounded-lg shadow-lg">
-                            <p className="font-medium">{payload[0].name}</p>
-                            <p className="text-lg font-bold">
-                              {payload[0].value.toFixed(1)}%
-                            </p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Habits by Streak Chart */}
-      <Card className="overflow-hidden">
-        <CardHeader>
-          <CardTitle className="text-lg">Habits by Streak</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px] w-full">
-            <ChartContainer
-              config={{
-                currentStreak: { color: "#9b87f5", label: "Current Streak" },
-                longestStreak: { color: "#4ade80", label: "Longest Streak" },
-              }}
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={streaksData}
-                  margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 60,
-                  }}
-                >
-                  <ChartTooltip 
-                    content={<ChartTooltipContent />}
-                  />
-                  <Bar
-                    dataKey="currentStreak"
-                    fill="#9b87f5"
-                    radius={[4, 4, 0, 0]}
-                    animationDuration={1500}
-                  />
-                  <Bar
-                    dataKey="longestStreak"
-                    fill="#4ade80"
-                    radius={[4, 4, 0, 0]}
-                    animationDuration={1500}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={70} />
+                    <YAxis />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Bar dataKey="current" name="Current Streak" fill="#9b87f5" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="longest" name="Longest Streak" fill="#65c9ff" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="trend" className="mt-4">
+            {habits.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No habits to analyze yet</p>
+            ) : (
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={trendData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                    <XAxis dataKey="day" />
+                    <YAxis />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="rate"
+                      name="Completion Rate"
+                      stroke="#9b87f5"
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                      animationDuration={1000}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
-};
-
-export default AnalyticsCharts;
+}
