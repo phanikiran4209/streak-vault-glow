@@ -29,19 +29,26 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
-  const { habits, addHabit, updateHabit, deleteHabit } = useHabits();
+  const { habits, addHabit, updateHabit, deleteHabit, isLoading } = useHabits();
   const { preferences, updatePreferences } = usePreferences();
+  const { toast } = useToast();
   
   const [isAddHabitDialogOpen, setIsAddHabitDialogOpen] = useState(false);
   const [isEditHabitDialogOpen, setIsEditHabitDialogOpen] = useState(false);
   const [currentHabit, setCurrentHabit] = useState<Habit | null>(null);
   const [activeTab, setActiveTab] = useState("today");
   
-  const handleAddHabit = (habit: Omit<Habit, "id" | "createdAt">) => {
-    addHabit(habit);
-    setIsAddHabitDialogOpen(false);
+  const handleAddHabit = async (habit: Omit<Habit, "id" | "createdAt">) => {
+    try {
+      await addHabit(habit);
+      setIsAddHabitDialogOpen(false);
+    } catch (error) {
+      // Error is already handled in the context
+      console.error("Error in handleAddHabit:", error);
+    }
   };
   
   const handleEditHabit = (habit: Habit) => {
@@ -49,17 +56,27 @@ const Dashboard = () => {
     setIsEditHabitDialogOpen(true);
   };
   
-  const handleUpdateHabit = (habit: Habit) => {
-    updateHabit(habit);
-    setIsEditHabitDialogOpen(false);
-    setCurrentHabit(null);
-  };
-  
-  const handleDeleteHabit = () => {
-    if (currentHabit) {
-      deleteHabit(currentHabit.id);
+  const handleUpdateHabit = async (habit: Habit) => {
+    try {
+      await updateHabit(habit);
       setIsEditHabitDialogOpen(false);
       setCurrentHabit(null);
+    } catch (error) {
+      // Error is already handled in the context
+      console.error("Error in handleUpdateHabit:", error);
+    }
+  };
+  
+  const handleDeleteHabit = async () => {
+    if (currentHabit) {
+      try {
+        await deleteHabit(currentHabit.id);
+        setIsEditHabitDialogOpen(false);
+        setCurrentHabit(null);
+      } catch (error) {
+        // Error is already handled in the context
+        console.error("Error in handleDeleteHabit:", error);
+      }
     }
   };
   

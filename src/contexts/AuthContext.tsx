@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Check if user is already logged in
-    const savedToken = getLocalStorage<string | null>(TOKEN_STORAGE_KEY, null);
+    const savedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
     const savedUser = getLocalStorage<User | null>(USER_STORAGE_KEY, null);
     
     if (savedToken && savedUser) {
@@ -49,13 +49,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       
       if (!response.ok) {
-        throw new Error(`Login failed: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Login failed: ${response.statusText}`);
       }
       
       const data = await response.json();
       
       // Save token to local storage
-      setLocalStorage(TOKEN_STORAGE_KEY, data.token);
+      localStorage.setItem(TOKEN_STORAGE_KEY, data.token);
       
       // Create user object from login response
       const userInfo: User = {
@@ -87,7 +88,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       
       if (!response.ok) {
-        throw new Error(`Registration failed: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Registration failed: ${response.statusText}`);
       }
       
       // Registration successful, but we don't automatically log in
@@ -102,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    setLocalStorage(TOKEN_STORAGE_KEY, null);
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
     setLocalStorage(USER_STORAGE_KEY, null);
   };
 
