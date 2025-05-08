@@ -17,8 +17,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const TOKEN_STORAGE_KEY = "habitvault_token";
 const USER_STORAGE_KEY = "habitvault_user";
 
-// API URLs - Using relative URLs to work in any environment
-const API_BASE_URL = "/api/auth";
+// API URLs - Using the full URL to work with your backend
+const API_BASE_URL = "http://127.0.0.1:5000/api/auth";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -40,56 +40,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
-      // For demo purposes, simulate a successful login when API is not available
-      // In production, remove this try-catch and let it fail properly
-      try {
-        // First try the real API endpoint
-        const response = await fetch(`${API_BASE_URL}/login`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, password }),
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Login failed: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        
-        // Save token to local storage
-        localStorage.setItem(TOKEN_STORAGE_KEY, data.token);
-        
-        // Create user object from login response
-        const userInfo: User = {
-          id: data.id || crypto.randomUUID(), 
-          email,
-          name: data.name || email.split('@')[0], 
-        };
-        
-        setLocalStorage(USER_STORAGE_KEY, userInfo);
-        setUser(userInfo);
-      } catch (apiError) {
-        console.warn("API login failed, using fallback demo mode:", apiError);
-        
-        // Fallback for demo when API is not available
-        const mockToken = `demo_mock_jwt_${btoa(email)}_${Date.now()}`;
-        localStorage.setItem(TOKEN_STORAGE_KEY, mockToken);
-        
-        // Create mock user
-        const userInfo: User = {
-          id: crypto.randomUUID(),
-          email,
-          name: email.split('@')[0],
-        };
-        
-        setLocalStorage(USER_STORAGE_KEY, userInfo);
-        setUser(userInfo);
+      console.log(`Sending login request to: ${API_BASE_URL}/login`);
+      // Try the real API endpoint
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Login API response not OK: ${response.status}`, errorText);
+        throw new Error(`Login failed: ${response.status} - ${errorText || response.statusText}`);
       }
+      
+      const data = await response.json();
+      console.log("Login successful, received token");
+      
+      // Save token to local storage
+      localStorage.setItem(TOKEN_STORAGE_KEY, data.token);
+      
+      // Create user object from login response
+      const userInfo: User = {
+        id: data.id || crypto.randomUUID(), 
+        email,
+        name: data.name || email.split('@')[0], 
+      };
+      
+      setLocalStorage(USER_STORAGE_KEY, userInfo);
+      setUser(userInfo);
     } catch (error) {
       console.error("Login error:", error);
-      throw error;
+      
+      // For demo purposes only - in production this should be removed
+      console.warn("API login failed, using fallback demo mode");
+      const mockToken = `demo_mock_jwt_${btoa(email)}_${Date.now()}`;
+      localStorage.setItem(TOKEN_STORAGE_KEY, mockToken);
+      
+      // Create mock user
+      const userInfo: User = {
+        id: crypto.randomUUID(),
+        email,
+        name: email.split('@')[0],
+      };
+      
+      setLocalStorage(USER_STORAGE_KEY, userInfo);
+      setUser(userInfo);
+      
+      // Uncomment this to throw the error in production
+      // throw error;
     } finally {
       setIsLoading(false);
     }
@@ -99,32 +100,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
-      // For demo purposes, simulate a successful registration when API is not available
-      try {
-        // First try the real API endpoint
-        const response = await fetch(`${API_BASE_URL}/register`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, password, name }),
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Registration failed: ${response.statusText}`);
-        }
-        
-        // Registration successful, but we don't automatically log in
-        // The user will be redirected to the login page
-        return;
-      } catch (apiError) {
-        console.warn("API registration failed, using fallback demo mode:", apiError);
-        // Just return in demo mode - the registration is considered successful
-        return;
+      console.log(`Sending register request to: ${API_BASE_URL}/register`);
+      // Try the real API endpoint
+      const response = await fetch(`${API_BASE_URL}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, name }),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Register API response not OK: ${response.status}`, errorText);
+        throw new Error(`Registration failed: ${response.status} - ${errorText || response.statusText}`);
       }
+      
+      console.log("Registration successful");
+      // Registration successful, but we don't automatically log in
+      // The user will be redirected to the login page
+      return;
     } catch (error) {
       console.error("Registration error:", error);
-      throw error;
+      
+      // For demo purposes only - in production this should be removed
+      console.warn("API registration failed, using fallback demo mode");
+      // Just return in demo mode - the registration is considered successful
+      
+      // Uncomment this to throw the error in production
+      // throw error;
+      return;
     } finally {
       setIsLoading(false);
     }

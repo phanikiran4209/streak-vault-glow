@@ -1,8 +1,8 @@
 
 import { Habit, HabitWithLogs } from "@/types";
 
-// Using relative URL to work in any environment
-const API_URL = '';
+// Use the full API URL to connect to your backend
+const API_URL = 'http://127.0.0.1:5000';
 
 // Interface for API habit format
 export interface ApiHabit {
@@ -95,7 +95,7 @@ export const createHabit = async (habit: Omit<Habit, "id" | "createdAt">): Promi
   });
 
   try {
-    // Try the real API endpoint
+    console.log(`Sending create habit to: ${API_URL}/api/habits`);
     const response = await fetch(`${API_URL}/api/habits`, {
       method: 'POST',
       headers: {
@@ -106,15 +106,19 @@ export const createHabit = async (habit: Omit<Habit, "id" | "createdAt">): Promi
     });
 
     if (!response.ok) {
-      throw new Error("API request failed");
+      const errorText = await response.text();
+      console.error(`API response not OK: ${response.status}`, errorText);
+      throw new Error(`API request failed: ${response.status} - ${errorText || response.statusText}`);
     }
 
     const createdHabit = await response.json();
+    console.log("Successfully created habit:", createdHabit);
     return convertFromApiHabit(createdHabit);
   } catch (error) {
-    console.warn("API createHabit failed, using fallback demo mode:", error);
+    console.error("API createHabit failed:", error);
     
-    // Demo mode fallback - create a habit with a generated ID
+    // In case the server is not available, use demo mode as fallback
+    console.warn("Falling back to demo mode for habit creation");
     const demoHabit: Habit = {
       ...habit,
       id: crypto.randomUUID(),
@@ -132,25 +136,29 @@ export const getHabits = async (): Promise<Habit[]> => {
   }
 
   try {
-    // Try the real API endpoint
+    console.log(`Getting habits from: ${API_URL}/api/habits`);
     const response = await fetch(`${API_URL}/api/habits`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
       }
     });
 
     if (!response.ok) {
-      throw new Error("API request failed");
+      const errorText = await response.text();
+      console.error(`API response not OK: ${response.status}`, errorText);
+      throw new Error(`API request failed: ${response.status} - ${errorText || response.statusText}`);
     }
 
     const habits = await response.json();
+    console.log("Successfully fetched habits:", habits);
     return habits.map(convertFromApiHabit);
   } catch (error) {
-    console.warn("API getHabits failed, using fallback demo mode:", error);
+    console.error("API getHabits failed:", error);
     
     // Demo mode fallback - return empty array
-    // In a real app, you might want to return some demo data here
+    console.warn("Falling back to demo mode for habit listing");
     return [];
   }
 };
@@ -164,7 +172,7 @@ export const updateHabit = async (habit: Habit): Promise<Habit> => {
   const habitToUpdate = convertToApiHabit(habit);
 
   try {
-    // Try the real API endpoint
+    console.log(`Updating habit at: ${API_URL}/api/habits/${habit.id}`);
     const response = await fetch(`${API_URL}/api/habits/${habit.id}`, {
       method: 'PUT',
       headers: {
@@ -175,15 +183,19 @@ export const updateHabit = async (habit: Habit): Promise<Habit> => {
     });
 
     if (!response.ok) {
-      throw new Error("API request failed");
+      const errorText = await response.text();
+      console.error(`API response not OK: ${response.status}`, errorText);
+      throw new Error(`API request failed: ${response.status} - ${errorText || response.statusText}`);
     }
 
     const updatedHabit = await response.json();
+    console.log("Successfully updated habit:", updatedHabit);
     return convertFromApiHabit(updatedHabit);
   } catch (error) {
-    console.warn("API updateHabit failed, using fallback demo mode:", error);
+    console.error("API updateHabit failed:", error);
     
     // Demo mode fallback - just return the habit as is
+    console.warn("Falling back to demo mode for habit update");
     return habit;
   }
 };
@@ -195,7 +207,7 @@ export const deleteHabit = async (id: string): Promise<void> => {
   }
 
   try {
-    // Try the real API endpoint
+    console.log(`Deleting habit at: ${API_URL}/api/habits/${id}`);
     const response = await fetch(`${API_URL}/api/habits/${id}`, {
       method: 'DELETE',
       headers: {
@@ -204,10 +216,15 @@ export const deleteHabit = async (id: string): Promise<void> => {
     });
 
     if (!response.ok) {
-      throw new Error("API request failed");
+      const errorText = await response.text();
+      console.error(`API response not OK: ${response.status}`, errorText);
+      throw new Error(`API request failed: ${response.status} - ${errorText || response.statusText}`);
     }
+    
+    console.log("Successfully deleted habit");
   } catch (error) {
-    console.warn("API deleteHabit failed, using fallback demo mode:", error);
+    console.error("API deleteHabit failed:", error);
+    console.warn("Falling back to demo mode for habit deletion");
     // Demo mode fallback - no action needed
   }
 };
