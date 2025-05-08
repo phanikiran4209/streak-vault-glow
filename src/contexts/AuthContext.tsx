@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User } from "@/types";
 import { getLocalStorage, setLocalStorage } from "@/lib/utils";
@@ -19,6 +18,15 @@ const USER_STORAGE_KEY = "habitvault_user";
 
 // API URLs
 const API_BASE_URL = "http://localhost:5000/api/auth";
+
+// Simple UUID generator as a fallback
+const generateUUID = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -49,7 +57,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       
       if (!response.ok) {
-        throw new Error(`Login failed: ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Login failed: ${response.statusText}`);
       }
       
       const data = await response.json();
@@ -59,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Create user object from login response
       const userInfo: User = {
-        id: data.id || crypto.randomUUID(), // Use ID from response or generate one
+        id: data.id || generateUUID(), // Use ID from response or generate one
         email,
         name: data.name || email.split('@')[0], // Use name from response or generate one from email
       };
@@ -87,7 +96,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       
       if (!response.ok) {
-        throw new Error(`Registration failed: ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Registration failed: ${response.statusText}`);
       }
       
       // Registration successful, but we don't automatically log in
