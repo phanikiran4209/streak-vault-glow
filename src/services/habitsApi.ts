@@ -1,8 +1,8 @@
 
 import { Habit, HabitWithLogs } from "@/types";
 
-// Use the full API URL to connect to your backend
-const API_URL = 'http://127.0.0.1:5000';
+// Use relative API URL to connect to your backend
+const API_URL = '';
 
 // Interface for API habit format
 export interface ApiHabit {

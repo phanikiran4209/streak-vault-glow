@@ -17,8 +17,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const TOKEN_STORAGE_KEY = "habitvault_token";
 const USER_STORAGE_KEY = "habitvault_user";
 
-// API URLs - Using the full URL to work with your backend
-const API_BASE_URL = "http://127.0.0.1:5000/api/auth";
+// API URLs - Using relative URL to work with your backend
+const API_BASE_URL = "/api/auth";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
